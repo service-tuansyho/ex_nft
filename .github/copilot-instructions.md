@@ -2,96 +2,43 @@
 
 ## Project Overview
 
-This is a Next.js 16 application for an NFT exchange on the Optimism network, using the App Router, TypeScript, Tailwind CSS v4, Material-UI (MUI), and MongoDB.
+This is a Next.js 16 NFT exchange for the Optimism network, using the App Router, TypeScript, Tailwind CSS v4, Material-UI (MUI), Wagmi, RainbowKit, MongoDB (via Mongoose), and TanStack React Query. The project is structured for rapid Web3 development with strict conventions for theming, data, and blockchain integration.
 
-## Architecture
+## Architecture & Key Patterns
 
-- **Framework**: Next.js 16 with App Router (`app/` directory)
-- **Styling**: Tailwind CSS v4 with custom CSS variables for theming, integrated with MUI
-- **UI Library**: Material-UI for components
-- **Blockchain**: Wagmi for Web3 interactions on Optimism
-- **Database**: MongoDB with Mongoose for data storage
-- **Data Fetching**: TanStack React Query for server state management
-- **Language**: TypeScript with strict mode enabled
-- **Linting**: ESLint with flat config and Next.js rules
+- **App Router**: All routing and pages are in `app/`. Use server components by default; use client components only for interactivity (e.g., Web3, theme toggling).
+- **Styling**: Tailwind v4 with custom CSS variables in `app/globals.css`. Dark mode is toggled via a React context in `app/providers.tsx` and persisted in localStorage. Use `bg-background text-foreground` for theme consistency. See `app/layout.tsx` for font and backdrop blur setup.
+- **UI**: Use MUI for complex UI. Prefer Tailwind for layout and color. Fonts are loaded in `app/layout.tsx` using Geist via CSS variables.
+- **Web3**: Use RainbowKit's `ConnectButton` for wallet UI (see `components/Header.tsx`). Wagmi is configured for Optimism (native currency: OP) in `app/providers.tsx`. All contract logic should be wrapped in `'use client'` components.
+- **Data Fetching**: Use TanStack React Query for all server state. QueryClient is set up in `app/providers.tsx`.
+- **Database**: Use `lib/mongodb.ts` for MongoDB connection (with global caching for dev hot reloads). Define schemas with Mongoose. Store connection string in `.env.local` as `MONGODB_URI`.
+- **Component Structure**: Pages in `app/`, shared UI in `components/`. Use dynamic imports in `ClientLayout.tsx` for SSR-unsafe components.
 
-## Key Patterns
+## Developer Workflow
 
-### Styling and Theming
+- **Start dev server**: `npm run dev`
+- **Build**: `npm run build`
+- **Lint**: `npm run lint` (uses ESLint flat config)
+- **Environment**: Add `.env.local` with `MONGODB_URI` for DB access
 
-Use Tailwind CSS classes with custom CSS variables defined in `app/globals.css`. The project supports dark mode via `prefers-color-scheme` media query. MUI themes can be customized in `app/providers.tsx` or a separate theme file.
+## Conventions & Examples
 
-Example from `app/globals.css`:
+- Use TypeScript interfaces for all props and data
+- Follow Next.js App Router conventions for file-based routing
+- Maintain dark mode compatibility in all UI (see ThemeContext in `app/providers.tsx`)
+- Use MUI for design system, Tailwind for layout/theming
+- Web3 errors/loading: handle in client components
+- MongoDB: cache connections globally (see `lib/mongodb.ts`)
+- Backdrop blur: see `app/layout.tsx`
 
-```css
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+## Key Files
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
-```
-
-Apply classes like `bg-background text-foreground` for consistent theming. Use MUI components for complex UI elements.
-
-### Font Usage
-
-Leverage Geist fonts loaded in `app/layout.tsx` via CSS variables:
-
-- `--font-geist-sans` for sans-serif
-- `--font-geist-mono` for monospace
-
-### Component Structure
-
-Pages are in `app/` directory. Use server components by default, client components only when necessary (e.g., for Web3 interactions). Wrap Web3 logic in 'use client' components.
-
-### Web3 Integration
-
-Use RainbowKit for wallet connections and Wagmi for contract interactions on Optimism. Configured in `app/providers.tsx` with getDefaultConfig including a custom Optimism chain where native currency symbol is "OP" instead of "ETH". Set `projectId` from WalletConnect cloud.
-
-Example:
-
-```tsx
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-```
-
-Use ConnectButton component for wallet UI, as in `app/page.tsx`.
-
-### Data Fetching
-
-Use TanStack React Query for caching and synchronizing server state. QueryClient is set up in `app/providers.tsx`.
-
-### Database
-
-Connect to MongoDB using `lib/mongodb.ts`. Use Mongoose models for data schemas. Connection includes caching for development hot reloads to prevent exponential connection growth.
-
-### Development Workflow
-
-- Start dev server: `npm run dev`
-- Build: `npm run build`
-- Lint: `npm run lint` (uses ESLint flat config)
-
-## Configuration Files
-
-- `tsconfig.json`: Standard Next.js config with `"@/*": ["./*"]` path alias
-- `eslint.config.mjs`: Flat config importing Next.js vitals and TypeScript rules
-- `postcss.config.mjs`: Tailwind v4 PostCSS plugin
-- `next.config.ts`: Empty, extend as needed
-- `.env.local`: Add `MONGODB_URI` for database connection; update `projectId` in `app/providers.tsx` for WalletConnect
+- `app/layout.tsx`, `app/globals.css`: Theming, fonts, backdrop
+- `app/providers.tsx`: Theme context, Wagmi, RainbowKit, React Query setup
+- `lib/mongodb.ts`: MongoDB connection logic
+- `components/Header.tsx`: Wallet connect UI
 
 ## Dependencies
 
-Includes Next.js 16, React 19, Tailwind v4, MUI, Wagmi, Ethers, Viem, TanStack React Query, Mongoose, RainbowKit. Add more as needed.
-
-## Conventions
-
-- Use TypeScript interfaces for props and data structures
-- Follow Next.js App Router conventions for file-based routing
-- Maintain dark mode compatibility in all UI components
-- Use MUI for consistent design system
-- Handle Web3 errors and loading states appropriately
-- Cache MongoDB connections globally to avoid issues in development</content>
-  <parameter name="filePath">/home/tuansyho/Desktop/code ex nft/ex-nft/.github/copilot-instructions.md
+Next.js 16, React 19, Tailwind v4, MUI, Wagmi, Ethers, Viem, TanStack React Query, Mongoose, RainbowKit
+<parameter name="filePath">/home/tuansyho/Desktop/code ex nft/ex-nft/.github/copilot-instructions.md

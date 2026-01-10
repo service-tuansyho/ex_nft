@@ -27,8 +27,24 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        style={{
+          backgroundColor: "var(--background)",
+          color: "var(--foreground)",
+        }}
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <div
+          style={{
+            backgroundColor: "rgba(255,255,255,0.15)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: -1,
+            backdropFilter: "blur(10px)",
+          }}
+        ></div>
         <Providers>
           <ClientLayout>{children}</ClientLayout>
         </Providers>

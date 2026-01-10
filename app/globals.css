@@ -2,8 +2,9 @@
 @import "@rainbow-me/rainbowkit/styles.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #c2ddaa;
+  --foreground: #000000;
+  --sub_background: #722f37;
 }
 
 @theme inline {
@@ -13,11 +14,18 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #722f37;
+    --foreground: #ffffff;
+    --sub_background: #c2ddaa;
   }
+} */
+
+:root.dark {
+  --background: #722f37;
+  --foreground: #ffffff;
+  --sub_background: #c2ddaa;
 }
 
 body {
