@@ -16,7 +16,6 @@ export default function Home() {
         <Typography variant="h5" gutterBottom>
           NFT Exchange on Optimism Network
         </Typography>
-        <ConnectButton />
       </Box>
     </Container>
   );

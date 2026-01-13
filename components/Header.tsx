@@ -178,7 +178,14 @@ export default function Header() {
             <img src={avatar} alt="avatar" className="w-24 h-24 rounded-full" />
           </Box>
           <Box display="flex" justifyContent="center" gap={1}>
-            <Button onClick={() => router.push("/profile")}>Profile</Button>
+            <Button
+              onClick={() => {
+                router.push("/profile");
+                setAccountModalOpen(false);
+              }}
+            >
+              Profile
+            </Button>
           </Box>
           <div className="flex justify-center">
             <p className="text-lg font-bold">{currentAccount?.address}</p>
