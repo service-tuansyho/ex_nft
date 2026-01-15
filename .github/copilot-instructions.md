@@ -2,51 +2,71 @@
 
 ## Project Overview
 
-This is a Next.js 16 NFT exchange for the Optimism network, using the App Router, TypeScript, Tailwind CSS v4, Material-UI (MUI), Wagmi, RainbowKit, MongoDB (via Mongoose), and TanStack React Query. The project is structured for rapid Web3 development with strict conventions for theming, data, and blockchain integration.
+Next.js 16 NFT marketplace for Optimism with wallet integration (RainbowKit/Wagmi), MongoDB persistence, and ERC-721 smart contract minting. Full Web3 stack: frontend (React 19, Tailwind v4, MUI), backend (Next.js API routes), blockchain (Solidity, Hardhat), and database (MongoDB/Mongoose).
 
-## Architecture & Key Patterns
+## Architecture & Data Flow
 
-- **App Router**: All routing and pages are in `app/`. Use server components by default; use client components only for interactivity (e.g., Web3, theme toggling).
-- **Styling**: Tailwind v4 with custom CSS variables in `app/globals.css`. Dark mode is toggled via a React context in `app/providers.tsx` and persisted in localStorage. Use `bg-background text-foreground` for theme consistency. See `app/layout.tsx` for font and backdrop blur setup.
-- **UI**: Use MUI for complex UI. Prefer Tailwind for layout and color. Fonts are loaded in `app/layout.tsx` using Geist via CSS variables.
-- **Web3**: Use RainbowKit's `ConnectButton` for wallet UI (see `components/Header.tsx`). Wagmi is configured for Optimism (native currency: OP) in `app/providers.tsx`. All contract logic should be wrapped in `'use client'` components.
-- **Data Fetching**: Use TanStack React Query for all server state. QueryClient is set up in `app/providers.tsx`.
-- **Database**: Use `lib/mongodb.ts` for MongoDB connection (with global caching for dev hot reloads). Define schemas with Mongoose in `lib/models.ts`. Store connection string in `.env.local` as `MONGODB_URI`.
-- **Component Structure**: Pages in `app/`, shared UI in `components/`. Use dynamic imports in `ClientLayout.tsx` for SSR-unsafe components.
-- **NFT Minting Flow**: On wallet connect, auto-create user in DB via `/api/users`. Mint NFTs on Optimism chain with user-paid fees, then save metadata to DB via `/api/nfts` and images to Cloudinary via `/api/upload`.
-- **Contract Deployment**: Use Hardhat to deploy `contracts/ExNFT.sol` to Optimism. Update contract address in `app/profile/page.tsx`. Requires `PRIVATE_KEY` in `.env.local`.
+**Three-Tier Integration:**
 
-## Developer Workflow
+1. **Blockchain** → Wagmi hooks (`useWriteContract`, `useWaitForTransactionReceipt`) call `ExNFT.sol::mint()` on Optimism
+2. **File Storage** → Minted image uploads to Cloudinary via `/api/upload` (multipart form-data)
+3. **Database** → Metadata persisted in MongoDB via `/api/nfts` POST after on-chain confirmation
 
-- **Start dev server**: `npm run dev`
-- **Build**: `npm run build`
-- **Lint**: `npm run lint` (uses ESLint flat config)
-- **Deploy contract**: `npx hardhat run scripts/deploy.js --network optimism` (after setting up Hardhat config and env vars)
-- **Environment**: Add `.env.local` with `MONGODB_URI`, `PRIVATE_KEY`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+**Key Pattern:** User connects wallet → auto-creates DB user in `/api/users` → mints token → saves NFT metadata → fetches user's NFTs from DB. See [app/profile/page.tsx](app/profile/page.tsx) for complete minting flow using React Query mutations.
 
-## Conventions & Examples
+## Core Conventions
 
-- Use TypeScript interfaces for all props and data
-- Follow Next.js App Router conventions for file-based routing
-- Maintain dark mode compatibility in all UI (see ThemeContext in `app/providers.tsx`)
-- Use MUI for design system, Tailwind for layout/theming
-- Web3 errors/loading: handle in client components
-- Use Mongoose models from `lib/models.ts` for data operations (e.g., User, NFT, Transaction)
-- User creation: Automatically create user in DB when wallet connects (see `app/profile/page.tsx`)
-- NFT creation: Mint NFTs on Optimism chain with user-paid fees (see `app/profile/page.tsx`, `contracts/ExNFT.sol`)
-- Backdrop blur: see `app/layout.tsx`
+- **Client vs Server**: Only `"use client"` for Web3 hooks, theme context, modals. Pages are server components by default.
+- **Styling**: Tailwind v4 + MUI. Theme CSS vars in `globals.css` toggled via `ThemeContext`. Always use `bg-background text-foreground` for dark mode.
+- **Web3 Hooks**: Use Wagmi 2.x API (`useAccount`, `useWriteContract`). RainbowKit handles wallet UI via `ConnectButton` (see [components/Header.tsx](components/Header.tsx#L15-L17)).
+- **API Patterns**: All routes return `{ success: boolean, data/error }`. Use `dbConnect()` middleware and Mongoose models (User, NFT, Transaction in [lib/models.ts](lib/models.ts)).
+- **Queries & Mutations**: React Query for all async state. Set up in `providers.tsx` with custom theme colors for accent.
+- **Contract Calls**: `ExNFT` is ERC-721 with `mint(address, tokenURI)` payable. Mint fee configurable by owner. Deploy via `npx hardhat run scripts/deploy.js --network optimism`.
 
-## Key Files
+## File Reference Map
 
-- `app/layout.tsx`, `app/globals.css`: Theming, fonts, backdrop
-- `app/providers.tsx`: Theme context, Wagmi, RainbowKit, React Query setup
-- `lib/mongodb.ts`: MongoDB connection logic
-- `lib/models.ts`: Mongoose schemas and models (User, NFT, Transaction)
-- `components/Header.tsx`: Wallet connect UI
-- `contracts/ExNFT.sol`: NFT smart contract for Optimism
-- `app/api/users/route.ts`, `app/api/nfts/route.ts`, `app/api/upload/route.ts`: API routes for user/NFT management and image upload
+| File                                                       | Purpose            | Key Detail                                                                  |
+| ---------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------- |
+| [app/providers.tsx](app/providers.tsx)                     | Theme + Web3 setup | Wagmi config uses customOptimism chain with "OP" currency symbol            |
+| [lib/mongodb.ts](lib/mongodb.ts)                           | DB connection      | Global singleton caching prevents connection growth during hot reloads      |
+| [lib/models.ts](lib/models.ts)                             | Mongoose schemas   | User (unique address), NFT (tokenId + owner), Transaction (txHash tracking) |
+| [app/api/nfts/route.ts](app/api/nfts/route.ts#L9-L15)      | NFT CRUD           | GET filters by owner; POST saves minted NFT metadata                        |
+| [app/api/upload/route.ts](app/api/upload/route.ts#L12-L35) | Cloudinary upload  | Converts FormData file to Buffer, streams to Cloudinary                     |
+| [components/MintModal.tsx](components/MintModal.tsx)       | Mint UI            | Form inputs + Wagmi write hook → Cloudinary upload → DB save                |
+| [contracts/ExNFT.sol](contracts/ExNFT.sol#L14-L19)         | ERC-721 contract   | `mint()` requires fee, increments tokenId, calls owner().transfer()         |
 
-## Dependencies
+## Developer Commands
 
-Next.js 16, React 19, Tailwind v4, MUI, Wagmi, Ethers, Viem, TanStack React Query, Mongoose, RainbowKit, Cloudinary, Hardhat
-<parameter name="filePath">/home/tuansyho/Desktop/code ex nft/ex-nft/.github/copilot-instructions.md
+```bash
+npm run dev          # Next.js dev with hot reload
+npm run build        # Production build
+npm run lint         # ESLint (flat config)
+npx hardhat run scripts/deploy.js --network optimism  # Deploy contract to Optimism
+```
+
+## Environment (.env.local)
+
+```
+MONGODB_URI=mongodb+srv://...
+PRIVATE_KEY=0x...  # For Hardhat contract deployment
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
+
+## Code Patterns to Follow
+
+- **NFT Minting**: Mint on-chain via Wagmi → upload image via FormData → POST to `/api/nfts` with tokenId + contractAddress + image URL
+- **Wallet Checks**: Use `useAccount()` hook; render fallback UI if `!isConnected`
+- **Database Queries**: Always call `await dbConnect()` first in API routes; use Mongoose `.lean()` for read-only queries
+- **Error Handling**: Wrap API responses in try-catch; return NextResponse.json with 400/500 status codes
+- **Type Safety**: Define TypeScript interfaces (IUser, INFT) matching Mongoose schema; use `mongoose.Types.ObjectId` for references
+- **Image Storage**: No local uploads; always use Cloudinary URL in NFT metadata
+
+## Common Gotchas
+
+- **Dev server hot reloads**: MongoDB connection cached globally in [lib/mongodb.ts](lib/mongodb.ts#L16-L19) to prevent exponential connections
+- **Dark mode**: Must toggle via ThemeContext AND set `dark`/`light` class on `document.documentElement`, not just CSS
+- **Wagmi config**: Customized Optimism chain in [app/providers.tsx](app/providers.tsx#L17-L22); must match deployed contract network
+- **Mint fees**: Contract owner can set fee via `setMintFee()`; users must send `msg.value >= mintFee` in transaction
+  <parameter name="filePath">/home/tuansyho/Desktop/code ex nft/ex-nft/.github/copilot-instructions.md

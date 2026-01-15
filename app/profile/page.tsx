@@ -26,7 +26,6 @@ interface NFT {
   listed: boolean;
   createdAt: string;
 }
-
 export default function Profile() {
   const { address, isConnected } = useAccount();
   const [modalOpen, setModalOpen] = useState(false);
@@ -78,6 +77,7 @@ export default function Profile() {
       </Container>
     );
   }
+  console.log("modalOpen", modalOpen);
 
   return (
     <Container maxWidth="lg" className="min-h-screen py-8">
@@ -138,6 +138,16 @@ export default function Profile() {
                     <Typography variant="body2" color="text.secondary">
                       Listed: {nft.listed ? "Yes" : "No"}
                     </Typography>
+                    <Button
+                      size="small"
+                      component="a"
+                      href={`https://optimistic.etherscan.io/nft/${nft.contractAddress}/${nft.tokenId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ mt: 1 }}
+                    >
+                      View on Scan
+                    </Button>
                   </CardContent>
                 </Card>
               </Grid>

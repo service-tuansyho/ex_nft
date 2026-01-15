@@ -16,6 +16,7 @@ contract ExNFT is ERC721, ERC721URIStorage, Ownable {
         uint256 tokenId = _nextTokenId++;
         _mint(to, tokenId);
         _setTokenURI(tokenId, tokenURI);
+        payable(owner()).transfer(msg.value);
         return tokenId;
     }
 

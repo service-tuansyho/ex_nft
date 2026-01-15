@@ -17,7 +17,7 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 // Mock NFT contract ABI - replace with your actual contract
 const NFT_CONTRACT_ABI = [
@@ -34,7 +34,7 @@ const NFT_CONTRACT_ABI = [
 ] as const;
 
 // Replace with your deployed contract address on Optimism
-const NFT_CONTRACT_ADDRESS = "0x940ad1c3799962A5A88afDC55792C0E83b6C3a89";
+const NFT_CONTRACT_ADDRESS = "0xF401958f19bB7e1C6542755488366E5f30f7DF31";
 
 interface MintModalProps {
   open: boolean;
@@ -48,13 +48,16 @@ export default function MintModal({
   onMintSuccess,
 }: MintModalProps) {
   const { address } = useAccount();
+  const hasClosedRef = useRef(false);
   const [nftForm, setNftForm] = useState({
     name: "",
     description: "",
     image: null as File | null,
   });
   const [imageUrl, setImageUrl] = useState<string>("");
-  const [hasSaved, setHasSaved] = useState(false);
+  const [mintAttempt, setMintAttempt] = useState(0);
+  const [currentAttempt, setCurrentAttempt] = useState(0);
+  const [lastSavedAttempt, setLastSavedAttempt] = useState(0);
 
   // Mint NFT contract interaction
   const {
@@ -94,12 +97,18 @@ export default function MintModal({
 
   // Handle successful mint confirmation
   useEffect(() => {
-    if (isConfirmed && hash && address && !hasSaved) {
+    if (
+      open &&
+      isConfirmed &&
+      hash &&
+      address &&
+      currentAttempt > lastSavedAttempt
+    ) {
       // Parse the transaction receipt to get the tokenId from the Transfer event
       // For simplicity, we'll use the hash as tokenId for now
       const tokenId = hash; // TODO: Parse actual tokenId from logs
 
-      setHasSaved(true);
+      setLastSavedAttempt(currentAttempt);
       saveNftMutation.mutate({
         tokenId: tokenId,
         contractAddress: NFT_CONTRACT_ADDRESS,
@@ -111,25 +120,33 @@ export default function MintModal({
       });
     }
   }, [
+    open,
     isConfirmed,
     hash,
     address,
-    hasSaved,
+    currentAttempt,
+    lastSavedAttempt,
     saveNftMutation,
     nftForm,
     imageUrl,
   ]);
 
-  // Reset hasSaved when modal opens
+  // Reset states when modal closes
   useEffect(() => {
-    if (open) {
-      setHasSaved(false);
+    if (!open) {
+      setLastSavedAttempt(0);
+      setCurrentAttempt(0);
+      setMintAttempt(0);
+      setNftForm({ name: "", description: "", image: null });
+      setImageUrl("");
+      hasClosedRef.current = false;
     }
   }, [open]);
 
   // Handle successful save
   useEffect(() => {
-    if (saveNftMutation.isSuccess) {
+    if (saveNftMutation.isSuccess && !hasClosedRef.current) {
+      hasClosedRef.current = true;
       onMintSuccess?.();
       onClose(); // Auto close modal on success
     }
@@ -140,6 +157,10 @@ export default function MintModal({
       alert("Please fill in all required fields");
       return;
     }
+
+    const attempt = mintAttempt + 1;
+    setMintAttempt(attempt);
+    setCurrentAttempt(attempt);
 
     try {
       // Upload image to Cloudinary
@@ -174,6 +195,7 @@ export default function MintModal({
         abi: NFT_CONTRACT_ABI,
         functionName: "mint",
         args: [address, tokenURI],
+        value: BigInt(10000000000000), // 0.001 ETH in wei
       });
     } catch (error) {
       console.error("Minting failed:", error);
@@ -187,7 +209,6 @@ export default function MintModal({
       // Reset form
       setNftForm({ name: "", description: "", image: null });
       setImageUrl("");
-      setHasSaved(false);
     }
   };
 
