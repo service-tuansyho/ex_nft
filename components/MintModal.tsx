@@ -34,7 +34,7 @@ const NFT_CONTRACT_ABI = [
 ] as const;
 
 // Replace with your deployed contract address on Optimism
-const NFT_CONTRACT_ADDRESS = "0xF401958f19bB7e1C6542755488366E5f30f7DF31";
+const NFT_CONTRACT_ADDRESS = "0x4e2BC3C9850263BA5Eee209C4ede54b190e3Cd41";
 
 interface MintModalProps {
   open: boolean;
@@ -58,6 +58,7 @@ export default function MintModal({
   const [mintAttempt, setMintAttempt] = useState(0);
   const [currentAttempt, setCurrentAttempt] = useState(0);
   const [lastSavedAttempt, setLastSavedAttempt] = useState(0);
+  const [displayedHash, setDisplayedHash] = useState<string>(""); // Track which hash is displayed
 
   // Mint NFT contract interaction
   const {
@@ -104,6 +105,9 @@ export default function MintModal({
       address &&
       currentAttempt > lastSavedAttempt
     ) {
+      // Set displayed hash for alert
+      setDisplayedHash(hash);
+      
       // Parse the transaction receipt to get the tokenId from the Transfer event
       // For simplicity, we'll use the hash as tokenId for now
       const tokenId = hash; // TODO: Parse actual tokenId from logs
@@ -139,8 +143,11 @@ export default function MintModal({
       setMintAttempt(0);
       setNftForm({ name: "", description: "", image: null });
       setImageUrl("");
+      setDisplayedHash(""); // Clear displayed hash
       hasClosedRef.current = false;
+      saveNftMutation.reset(); // Reset mutation state
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Handle successful save
@@ -252,9 +259,9 @@ export default function MintModal({
           </Box>
         </Box>
 
-        {isConfirmed && (
+        {displayedHash && isConfirmed && (
           <Alert severity="success" className="mt-4">
-            NFT minted successfully! Transaction hash: {hash}
+            NFT minted successfully! Transaction hash: {displayedHash}
           </Alert>
         )}
 

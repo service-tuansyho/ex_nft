@@ -52,7 +52,7 @@ main().catch((error) => {
 4. Deploy to Optimism:
 
 ```bash
-npx hardhat run scripts/deploy.js --network optimism
+npx hardhat run scripts/deploy.cjs --network optimism
 ```
 
 5. Update the contract address in `app/profile/page.tsx`:
