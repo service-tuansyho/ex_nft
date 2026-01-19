@@ -13,8 +13,8 @@ contract ExNFT is ERC721, ERC721URIStorage, Ownable {
 
     function mint(address to, string memory tokenURI) public payable returns (uint256) {
         require(msg.value >= mintFee, "Insufficient fee");
-        uint256 tokenId = _nextTokenId++;
-        _mint(to, tokenId);
+        uint256 tokenId = ++_nextTokenId;
+        _safeMint(to, tokenId);
         _setTokenURI(tokenId, tokenURI);
         payable(owner()).transfer(msg.value);
         return tokenId;

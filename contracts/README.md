@@ -52,6 +52,7 @@ main().catch((error) => {
 4. Deploy to Optimism:
 
 ```bash
+npx hardhat compile
 npx hardhat run scripts/deploy.cjs --network optimism
 ```
 

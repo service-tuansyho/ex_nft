@@ -34,7 +34,7 @@ const NFT_CONTRACT_ABI = [
 ] as const;
 
 // Replace with your deployed contract address on Optimism
-const NFT_CONTRACT_ADDRESS = "0x4e2BC3C9850263BA5Eee209C4ede54b190e3Cd41";
+const NFT_CONTRACT_ADDRESS = "0x9d22CB31D2fa8569DAB0C78992459711bc0d8884";
 
 interface MintModalProps {
   open: boolean;
@@ -170,7 +170,7 @@ export default function MintModal({
     setCurrentAttempt(attempt);
 
     try {
-      // Upload image to Cloudinary
+      // Step 1: Upload image to Cloudinary
       const formData = new FormData();
       formData.append("file", nftForm.image);
 
@@ -187,16 +187,29 @@ export default function MintModal({
       const imageUrl = uploadData.url;
       setImageUrl(imageUrl);
 
-      // Create metadata
+      // Step 2: Create metadata and upload to Cloudinary
       const metadata = {
         name: nftForm.name,
-        description: nftForm.description,
+        description: nftForm.description || "",
         image: imageUrl,
       };
 
-      // For now, we'll use a simple string - in production, upload to IPFS
-      const tokenURI = JSON.stringify(metadata);
+      const metadataResponse = await fetch("/api/metadata", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(metadata),
+      });
 
+      if (!metadataResponse.ok) {
+        throw new Error("Failed to upload metadata");
+      }
+
+      const metadataData = await metadataResponse.json();
+      const tokenURI = metadataData.data.url;
+
+      // Step 3: Mint NFT with metadata URI
       writeContract({
         address: NFT_CONTRACT_ADDRESS,
         abi: NFT_CONTRACT_ABI,

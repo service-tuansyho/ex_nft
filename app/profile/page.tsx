@@ -13,6 +13,7 @@ import { useAccount } from "wagmi";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import MintModal from "../../components/MintModal";
+import NFTDetails from "../../components/NFTDetails";
 
 interface NFT {
   _id: string;
@@ -111,45 +112,17 @@ export default function Profile() {
           <Grid container spacing={3}>
             {userNfts.map((nft) => (
               <Grid item xs={12} sm={6} md={4} key={nft._id}>
-                <Card>
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={nft.image}
-                    alt={nft.name}
-                    sx={{ objectFit: "cover" }}
-                  />
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {nft.name}
-                    </Typography>
-                    {nft.description && (
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        gutterBottom
-                      >
-                        {nft.description}
-                      </Typography>
-                    )}
-                    <Typography variant="body2" color="text.secondary">
-                      Token ID: {nft.tokenId}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Listed: {nft.listed ? "Yes" : "No"}
-                    </Typography>
-                    <Button
-                      size="small"
-                      component="a"
-                      href={`https://optimistic.etherscan.io/nft/${nft.contractAddress}/${nft.tokenId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ mt: 1 }}
-                    >
-                      View on Scan
-                    </Button>
-                  </CardContent>
-                </Card>
+                <NFTDetails
+                  tokenId={nft.tokenId}
+                  contractAddress={nft.contractAddress}
+                  owner={nft.owner}
+                  name={nft.name}
+                  description={nft.description}
+                  image={nft.image}
+                  price={nft.price}
+                  listed={nft.listed}
+                  createdAt={nft.createdAt}
+                />
               </Grid>
             ))}
           </Grid>
