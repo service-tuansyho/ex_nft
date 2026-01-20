@@ -66,12 +66,33 @@ export default function MintModal({
     data: hash,
     isPending: isMinting,
   } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+  const { isLoading: isConfirming, isSuccess: isConfirmed, data: receipt } =
     useWaitForTransactionReceipt({
       hash,
     });
 
-  // Save NFT to database after successful mint
+  // Parse tokenId from Transfer event logs
+  const parseTokenIdFromLogs = (logs: any[]): string | null => {
+    if (!logs) return null;
+    
+    // ERC721 Transfer event signature
+    // event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)
+    // Topic0: Transfer event hash
+    const TRANSFER_EVENT_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+    
+    for (const log of logs) {
+      if (log.topics && log.topics[0] === TRANSFER_EVENT_TOPIC) {
+        // tokenId is the 3rd topic (indexed parameter)
+        const tokenIdHex = log.topics[3];
+        if (tokenIdHex) {
+          const tokenId = BigInt(tokenIdHex).toString();
+          console.log("Parsed tokenId from logs:", tokenId);
+          return tokenId;
+        }
+      }
+    }
+    return null;
+  };
   const saveNftMutation = useMutation({
     mutationFn: async (nftData: {
       tokenId: string;
@@ -103,18 +124,24 @@ export default function MintModal({
       isConfirmed &&
       hash &&
       address &&
-      currentAttempt > lastSavedAttempt
+      currentAttempt > lastSavedAttempt &&
+      receipt
     ) {
-      // Set displayed hash for alert
       setDisplayedHash(hash);
       
-      // Parse the transaction receipt to get the tokenId from the Transfer event
-      // For simplicity, we'll use the hash as tokenId for now
-      const tokenId = hash; // TODO: Parse actual tokenId from logs
+      // Parse actual tokenId from transaction logs
+      const parsedTokenId = parseTokenIdFromLogs(receipt.logs);
+      
+      if (!parsedTokenId) {
+        console.error("Failed to parse tokenId from logs");
+        alert("Could not extract tokenId from transaction. Please refresh and check manually.");
+        return;
+      }
 
+      console.log("Using tokenId from logs:", parsedTokenId);
       setLastSavedAttempt(currentAttempt);
       saveNftMutation.mutate({
-        tokenId: tokenId,
+        tokenId: parsedTokenId,
         contractAddress: NFT_CONTRACT_ADDRESS,
         owner: address,
         name: nftForm.name,
@@ -130,6 +157,7 @@ export default function MintModal({
     address,
     currentAttempt,
     lastSavedAttempt,
+    receipt,
     saveNftMutation,
     nftForm,
     imageUrl,

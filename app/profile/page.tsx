@@ -122,6 +122,7 @@ export default function Profile() {
                   price={nft.price}
                   listed={nft.listed}
                   createdAt={nft.createdAt}
+                  onTransferSuccess={() => refetchNfts()}
                 />
               </Grid>
             ))}

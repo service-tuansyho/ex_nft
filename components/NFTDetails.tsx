@@ -12,8 +12,10 @@ import {
   Divider,
 } from "@mui/material";
 import { useState } from "react";
+import { useAccount } from "wagmi";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandMore from "./ExpandMore";
+import TransferModal from "./TransferModal";
 
 interface NFTDetailsProps {
   tokenId: string;
@@ -25,6 +27,7 @@ interface NFTDetailsProps {
   price?: number;
   listed: boolean;
   createdAt?: string;
+  onTransferSuccess?: () => void;
 }
 
 export default function NFTDetails({
@@ -37,8 +40,12 @@ export default function NFTDetails({
   price,
   listed,
   createdAt,
+  onTransferSuccess,
 }: NFTDetailsProps) {
+  const { address } = useAccount();
   const [expanded, setExpanded] = useState(false);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const isOwner = address?.toLowerCase() === owner.toLowerCase();
 
   const handleExpandClick = () => {
     setExpanded(!expanded);
@@ -93,6 +100,26 @@ export default function NFTDetails({
             <strong>Created:</strong> {formatDate(createdAt)}
           </Typography>
         </Box>
+
+        {isOwner && (
+          <Box sx={{ mb: 2, display: "flex", gap: 1 }}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="primary"
+              size="small"
+              onClick={() => setTransferModalOpen(true)}
+            >
+              Transfer NFT
+            </Button>
+          </Box>
+        )}
+
+        {!isOwner && address && (
+          <Typography variant="caption" color="error" display="block" sx={{ mb: 2 }}>
+            ⚠️ You are not the owner of this NFT
+          </Typography>
+        )}
 
         <Divider sx={{ my: 2 }} />
 
@@ -188,6 +215,17 @@ export default function NFTDetails({
           </Box>
         </Collapse>
       </CardContent>
+
+      <TransferModal
+        open={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        tokenId={tokenId}
+        contractAddress={contractAddress}
+        onTransferSuccess={() => {
+          setTransferModalOpen(false);
+          onTransferSuccess?.();
+        }}
+      />
     </Card>
   );
 }
