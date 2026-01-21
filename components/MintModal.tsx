@@ -59,12 +59,14 @@ export default function MintModal({
   const [currentAttempt, setCurrentAttempt] = useState(0);
   const [lastSavedAttempt, setLastSavedAttempt] = useState(0);
   const [displayedHash, setDisplayedHash] = useState<string>(""); // Track which hash is displayed
+  const [lastProcessedHash, setLastProcessedHash] = useState<string>(""); // Track which hash we've already processed
 
   // Mint NFT contract interaction
   const {
     writeContract,
     data: hash,
     isPending: isMinting,
+    reset: resetWriteContract,
   } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed, data: receipt } =
     useWaitForTransactionReceipt({
@@ -123,11 +125,14 @@ export default function MintModal({
       open &&
       isConfirmed &&
       hash &&
+      hash !== lastProcessedHash && // Only process new hashes
       address &&
       currentAttempt > lastSavedAttempt &&
       receipt
     ) {
+      console.log("Processing confirmation for hash:", hash);
       setDisplayedHash(hash);
+      setLastProcessedHash(hash); // Mark this hash as processed
       
       // Parse actual tokenId from transaction logs
       const parsedTokenId = parseTokenIdFromLogs(receipt.logs);
@@ -154,6 +159,7 @@ export default function MintModal({
     open,
     isConfirmed,
     hash,
+    lastProcessedHash,
     address,
     currentAttempt,
     lastSavedAttempt,
@@ -172,8 +178,10 @@ export default function MintModal({
       setNftForm({ name: "", description: "", image: null });
       setImageUrl("");
       setDisplayedHash(""); // Clear displayed hash
+      setLastProcessedHash(""); // Clear processed hash tracking
       hasClosedRef.current = false;
       saveNftMutation.reset(); // Reset mutation state
+      resetWriteContract(); // Reset Wagmi write contract state
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -196,6 +204,12 @@ export default function MintModal({
     const attempt = mintAttempt + 1;
     setMintAttempt(attempt);
     setCurrentAttempt(attempt);
+    
+    // Clear previous success message when starting new mint
+    setDisplayedHash("");
+    setLastProcessedHash("");
+    hasClosedRef.current = false; // Reset ref to allow modal to close on next success
+    resetWriteContract();
 
     try {
       // Step 1: Upload image to Cloudinary
@@ -259,7 +273,9 @@ export default function MintModal({
       setImageUrl("");
     }
   };
-
+  console.log("isMinting", isMinting);
+  console.log("form", nftForm);
+  console.log("isConfirming", isConfirming);
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New NFT</DialogTitle>
