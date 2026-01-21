@@ -60,6 +60,10 @@ export default function MintModal({
   const [lastSavedAttempt, setLastSavedAttempt] = useState(0);
   const [displayedHash, setDisplayedHash] = useState<string>(""); // Track which hash is displayed
   const [lastProcessedHash, setLastProcessedHash] = useState<string>(""); // Track which hash we've already processed
+  const [errors, setErrors] = useState<{
+    name?: string;
+    image?: string;
+  }>({});
 
   // Mint NFT contract interaction
   const {
@@ -88,7 +92,6 @@ export default function MintModal({
         const tokenIdHex = log.topics[3];
         if (tokenIdHex) {
           const tokenId = BigInt(tokenIdHex).toString();
-          console.log("Parsed tokenId from logs:", tokenId);
           return tokenId;
         }
       }
@@ -130,7 +133,6 @@ export default function MintModal({
       currentAttempt > lastSavedAttempt &&
       receipt
     ) {
-      console.log("Processing confirmation for hash:", hash);
       setDisplayedHash(hash);
       setLastProcessedHash(hash); // Mark this hash as processed
       
@@ -143,7 +145,6 @@ export default function MintModal({
         return;
       }
 
-      console.log("Using tokenId from logs:", parsedTokenId);
       setLastSavedAttempt(currentAttempt);
       saveNftMutation.mutate({
         tokenId: parsedTokenId,
@@ -179,6 +180,7 @@ export default function MintModal({
       setImageUrl("");
       setDisplayedHash(""); // Clear displayed hash
       setLastProcessedHash(""); // Clear processed hash tracking
+      setErrors({});
       hasClosedRef.current = false;
       saveNftMutation.reset(); // Reset mutation state
       resetWriteContract(); // Reset Wagmi write contract state
@@ -196,10 +198,25 @@ export default function MintModal({
   }, [saveNftMutation.isSuccess, onMintSuccess, onClose]);
 
   const handleMintNFT = async () => {
-    if (!address || !nftForm.name || !nftForm.image) {
-      alert("Please fill in all required fields");
+    const newErrors: typeof errors = {};
+
+    if (!nftForm.name) {
+      newErrors.name = "NFT name is required";
+    }
+    if (!nftForm.image) {
+      newErrors.image = "Image file is required";
+    }
+    if (!address) {
+      alert("Please connect your wallet first");
       return;
     }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
 
     const attempt = mintAttempt + 1;
     setMintAttempt(attempt);
@@ -214,7 +231,7 @@ export default function MintModal({
     try {
       // Step 1: Upload image to Cloudinary
       const formData = new FormData();
-      formData.append("file", nftForm.image);
+      formData.append("file", nftForm.image as File);
 
       const uploadResponse = await fetch("/api/upload", {
         method: "POST",
@@ -273,21 +290,32 @@ export default function MintModal({
       setImageUrl("");
     }
   };
-  console.log("isMinting", isMinting);
-  console.log("form", nftForm);
-  console.log("isConfirming", isConfirming);
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Create New NFT</DialogTitle>
       <DialogContent>
         <Box component="form" className="space-y-4 mt-2">
-          <TextField
-            fullWidth
-            label="NFT Name"
-            value={nftForm.name}
-            onChange={(e) => setNftForm({ ...nftForm, name: e.target.value })}
-            required
-          />
+          <div>
+            <TextField
+              fullWidth
+              label="NFT Name"
+              value={nftForm.name}
+              onChange={(e) => {
+                setNftForm({ ...nftForm, name: e.target.value });
+                if (e.target.value) {
+                  setErrors({ ...errors, name: undefined });
+                }
+              }}
+              required
+              error={!!errors.name}
+            />
+            {errors.name && (
+              <Typography variant="caption" color="error" sx={{ display: "block", mt: 0.5 }}>
+                {errors.name}
+              </Typography>
+            )}
+          </div>
 
           <TextField
             fullWidth
@@ -307,12 +335,26 @@ export default function MintModal({
             <input
               type="file"
               accept="image/*"
-              onChange={(e) =>
-                setNftForm({ ...nftForm, image: e.target.files?.[0] || null })
-              }
+              onChange={(e) => {
+                setNftForm({ ...nftForm, image: e.target.files?.[0] || null });
+                if (e.target.files?.[0]) {
+                  setErrors({ ...errors, image: undefined });
+                }
+              }}
               required
-              style={{ display: "block", marginTop: "8px" }}
+              style={{
+                display: "block",
+                marginTop: "8px",
+                padding: "8px",
+                border: errors.image ? "1px solid #d32f2f" : "1px solid #ccc",
+                borderRadius: "4px",
+              }}
             />
+            {errors.image && (
+              <Typography variant="caption" color="error" sx={{ display: "block", mt: 0.5 }}>
+                {errors.image}
+              </Typography>
+            )}
           </Box>
         </Box>
 
