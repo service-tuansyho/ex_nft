@@ -16,13 +16,13 @@ export const ThemeContext = createContext({
   toggleTheme: () => {},
 });
 
-// Custom Optimism chain with native token symbol changed to "OP"
+// Custom Optimism chain with native token symbol
 const customOptimism = {
   ...optimism,
   nativeCurrency: {
     ...optimism.nativeCurrency,
-    name: "Optimism Ether", // Optional: Update name if desired
-    symbol: "OP", // Changed from "ETH" to "OP"
+    name: "Optimism Ether",
+    symbol: "ETH",
   },
 };
 

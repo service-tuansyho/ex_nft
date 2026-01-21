@@ -20,6 +20,27 @@ import Image from "next/image";
 import { Sun, Moon, Copy } from "lucide-react";
 import { ThemeContext } from "../app/providers";
 
+// Format balance to 5 decimal places with ellipsis
+const formatBalance = (balance: string | undefined): string => {
+  if (!balance) return "";
+  // Extract the number part (remove units like "ETH")
+  const match = balance.match(/^([\d.]+)/);
+  if (!match) return balance;
+  
+  const num = parseFloat(match[1]);
+  if (isNaN(num)) return balance;
+  
+  // Format to 5 decimals
+  const formatted = num.toFixed(5);
+  // Remove trailing zeros after decimal point, but keep at least some decimals
+  const trimmed = formatted.replace(/0+$/, "").replace(/\.$/, "");
+  
+  // Check if original has more precision than what we show
+  const hasMore = formatted !== trimmed && formatted.replace(/0+$/, "") !== formatted;
+  
+  return hasMore ? trimmed + "..." : trimmed;
+};
+
 export default function Header() {
   const { isDark, toggleTheme } = useContext(ThemeContext);
   const { disconnect } = useDisconnect();
@@ -150,7 +171,7 @@ export default function Header() {
                         >
                           {account.displayName}
                           {account.displayBalance
-                            ? ` (${account.displayBalance})`
+                            ? ` (${formatBalance(account.displayBalance)})`
                             : ""}
                         </Button>
                       </div>

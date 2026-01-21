@@ -60,6 +60,8 @@ export default function MintModal({
   const [lastSavedAttempt, setLastSavedAttempt] = useState(0);
   const [displayedHash, setDisplayedHash] = useState<string>(""); // Track which hash is displayed
   const [lastProcessedHash, setLastProcessedHash] = useState<string>(""); // Track which hash we've already processed
+  const [isUploading, setIsUploading] = useState(false); // Track upload phase
+  const [uploadStatus, setUploadStatus] = useState<string>(""); // Show upload progress message
   const [errors, setErrors] = useState<{
     name?: string;
     image?: string;
@@ -180,6 +182,8 @@ export default function MintModal({
       setImageUrl("");
       setDisplayedHash(""); // Clear displayed hash
       setLastProcessedHash(""); // Clear processed hash tracking
+      setIsUploading(false); // Clear upload state
+      setUploadStatus(""); // Clear upload message
       setErrors({});
       hasClosedRef.current = false;
       saveNftMutation.reset(); // Reset mutation state
@@ -227,9 +231,11 @@ export default function MintModal({
     setLastProcessedHash("");
     hasClosedRef.current = false; // Reset ref to allow modal to close on next success
     resetWriteContract();
+    setIsUploading(true);
 
     try {
       // Step 1: Upload image to Cloudinary
+      setUploadStatus("Uploading image...");
       const formData = new FormData();
       formData.append("file", nftForm.image as File);
 
@@ -247,6 +253,7 @@ export default function MintModal({
       setImageUrl(imageUrl);
 
       // Step 2: Create metadata and upload to Cloudinary
+      setUploadStatus("Uploading metadata...");
       const metadata = {
         name: nftForm.name,
         description: nftForm.description || "",
@@ -269,6 +276,8 @@ export default function MintModal({
       const tokenURI = metadataData.data.url;
 
       // Step 3: Mint NFT with metadata URI
+      setUploadStatus("Sending transaction...");
+      setIsUploading(false); // Clear upload state before minting
       writeContract({
         address: NFT_CONTRACT_ADDRESS,
         abi: NFT_CONTRACT_ABI,
@@ -278,12 +287,14 @@ export default function MintModal({
       });
     } catch (error) {
       console.error("Minting failed:", error);
+      setIsUploading(false);
+      setUploadStatus("");
       alert("Minting failed. Please try again.");
     }
   };
 
   const handleClose = () => {
-    if (!isMinting && !isConfirming) {
+    if (!isMinting && !isConfirming && !isUploading) {
       onClose();
       // Reset form
       setNftForm({ name: "", description: "", image: null });
@@ -364,6 +375,12 @@ export default function MintModal({
           </Alert>
         )}
 
+        {uploadStatus && (
+          <Alert severity="info" className="mt-4">
+            {uploadStatus}
+          </Alert>
+        )}
+
         {saveNftMutation.isSuccess && (
           <Alert severity="info" className="mt-4">
             NFT saved to database successfully!
@@ -371,15 +388,17 @@ export default function MintModal({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={isMinting || isConfirming}>
+        <Button onClick={handleClose} disabled={isMinting || isConfirming || isUploading}>
           Cancel
         </Button>
         <Button
           onClick={handleMintNFT}
           variant="contained"
-          disabled={isMinting || isConfirming}
+          disabled={isMinting || isConfirming || isUploading}
         >
-          {isMinting
+          {isUploading
+            ? uploadStatus
+            : isMinting
             ? "Minting..."
             : isConfirming
             ? "Confirming..."
