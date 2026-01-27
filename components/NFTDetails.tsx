@@ -65,13 +65,18 @@ export default function NFTDetails({
   };
 
   return (
-    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Card sx={{
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      borderRadius: "12px",
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)"
+    }}>
       <CardMedia
         component="img"
         height="240"
         image={image}
         alt={name}
-        sx={{ objectFit: "cover" }}
       />
       <CardContent sx={{ flexGrow: 1 }}>
         <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold" }}>

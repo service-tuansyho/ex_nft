@@ -16,37 +16,31 @@ import {
   useTheme,
 } from "@mui/material";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useDisconnect } from "wagmi";
+import { useDisconnect, useAccount, useBalance } from "wagmi";
 import { useRouter } from "next/navigation";
 import blockies from "ethereum-blockies-base64";
 import Image from "next/image";
 import { Sun, Moon, Copy, Menu, X } from "lucide-react";
 import { ThemeContext } from "../app/providers";
 
-// Format balance to 5 decimal places with ellipsis
-const formatBalance = (balance: string | undefined): string => {
-  if (!balance) return "";
-  // Extract the number part (remove units like "ETH")
-  const match = balance.match(/^([\d.]+)/);
-  if (!match) return balance;
+// Format balance to 5 decimal places with ETH suffix
+const formatBalance = (value: bigint | undefined): string => {
+  if (!value) return "0.00000 ETH";
   
-  const num = parseFloat(match[1]);
-  if (isNaN(num)) return balance;
+  // Convert from wei to ETH (1 ETH = 10^18 wei)
+  const ethValue = Number(value) / 1e18;
   
-  // Format to 5 decimals
-  const formatted = num.toFixed(5);
-  // Remove trailing zeros after decimal point, but keep at least some decimals
-  const trimmed = formatted.replace(/0+$/, "").replace(/\.$/, "");
+  // Format to exactly 5 decimals
+  const formatted = ethValue.toFixed(5);
   
-  // Check if original has more precision than what we show
-  const hasMore = formatted !== trimmed && formatted.replace(/0+$/, "") !== formatted;
-  
-  return hasMore ? trimmed + "..." : trimmed;
+  return `${formatted} ETH`;
 };
 
 export default function Header() {
   const { isDark, toggleTheme } = useContext(ThemeContext);
   const { disconnect } = useDisconnect();
+  const { address } = useAccount();
+  const { data: balance } = useBalance({ address });
   const router = useRouter();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -153,6 +147,7 @@ export default function Header() {
                               backgroundColor: "var(--background)",
                               color: "var(--foreground)",
                               fontSize: "0.8rem",
+                              borderRadius: "24px",
                             }}
                           >
                             {chain.hasIcon && (
@@ -188,12 +183,24 @@ export default function Header() {
                               backgroundColor: "var(--background)",
                               color: "var(--foreground)",
                               fontSize: "0.8rem",
+                              padding: "4px 8px",
+                              minWidth: "auto",
+                              display: "flex",
+                              gap: 1,
+                              alignItems: "center",
+                              borderRadius: "24px",
                             }}
                           >
-                            {account.displayName.substring(0, 6)}...
-                            {account.displayBalance
-                              ? ` (${formatBalance(account.displayBalance)})`
-                              : ""}
+                            <img
+                              src={blockies(account.address)}
+                              alt="avatar"
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                              }}
+                            />
+                            {balance ? formatBalance(balance.value) : "0.00000 ETH"}
                           </Button>
                         </Box>
                       );
@@ -346,12 +353,22 @@ export default function Header() {
                           sx={{
                             backgroundColor: "var(--background)",
                             color: "var(--foreground)",
+                            display: "flex",
+                            gap: 1,
+                            alignItems: "center",
+                            justifyContent: "center",
                           }}
                         >
-                          {account.displayName}
-                          {account.displayBalance
-                            ? ` (${formatBalance(account.displayBalance)})`
-                            : ""}
+                          <img
+                            src={blockies(account.address)}
+                            alt="avatar"
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: "50%",
+                            }}
+                          />
+                          {balance ? formatBalance(balance.value) : "0.00000 ETH"}
                         </Button>
                       </Box>
                     );
