@@ -11,6 +11,8 @@ import {
   Dialog,
   DialogContent,
   CardActions,
+  CircularProgress,
+  Box,
 } from "@mui/material";
 import { useAccount } from "wagmi";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -52,7 +54,7 @@ export default function Profile() {
     },
   });
 
-  const { data: userNfts, refetch: refetchNfts } = useQuery({
+  const { data: userNfts, refetch: refetchNfts, isLoading } = useQuery({
     queryKey: ["userNfts", address],
     queryFn: async () => {
       if (!address) return [];
@@ -101,7 +103,24 @@ export default function Profile() {
       >
         Mint New NFT
       </Button>
-      {userNfts && userNfts.length > 0 && (
+
+      {isLoading ? (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            mt: 8,
+            gap: 2,
+          }}
+        >
+          <CircularProgress size={60} />
+          <Typography variant="body1" color="text.secondary">
+            Loading your NFTs...
+          </Typography>
+        </Box>
+      ) : userNfts && userNfts.length > 0 ? (
         <div className="mt-8">
           <Typography variant="h5" gutterBottom>
             Your NFTs (Total: {userNfts.length})
@@ -170,6 +189,21 @@ export default function Profile() {
             ))}
           </Grid>
         </div>
+      ) : (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            mt: 8,
+            gap: 2,
+          }}
+        >
+          <Typography variant="body1" color="text.secondary">
+            You haven't minted any NFTs yet. Click "Mint New NFT" to get started!
+          </Typography>
+        </Box>
       )}
 
       <Dialog

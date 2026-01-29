@@ -18,6 +18,7 @@ import {
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useDisconnect, useAccount, useBalance } from "wagmi";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import blockies from "ethereum-blockies-base64";
 import Image from "next/image";
 import { Sun, Moon, Copy, Menu, X } from "lucide-react";
@@ -26,13 +27,13 @@ import { ThemeContext } from "../app/providers";
 // Format balance to 5 decimal places with ETH suffix
 const formatBalance = (value: bigint | undefined): string => {
   if (!value) return "0.00000 ETH";
-  
+
   // Convert from wei to ETH (1 ETH = 10^18 wei)
   const ethValue = Number(value) / 1e18;
-  
+
   // Format to exactly 5 decimals
   const formatted = ethValue.toFixed(5);
-  
+
   return `${formatted} ETH`;
 };
 
@@ -54,17 +55,24 @@ export default function Header() {
       <Toolbar className="flex justify-between items-center px-2 md:px-4" sx={{ minHeight: { xs: 56, md: 64 } }}>
         {/* Left: Logo */}
         <Box className="flex items-center gap-2">
-          <IconButton edge="start" color="inherit" aria-label="logo" size="small">
-            <Image src="/vercel.svg" alt="Logo" width={28} height={28} />
-          </IconButton>
+          <Link href="/" style={{ display: "flex", alignItems: "center" }}>
+            <IconButton edge="start" color="inherit" aria-label="logo" size="small">
+              <Image src="/vercel.svg" alt="Logo" width={28} height={28} />
+            </IconButton>
+          </Link>
           {/* Desktop Menu */}
           <Box sx={{ display: { xs: "none", md: "flex" }, gap: 1 }}>
-            <Button color="inherit" sx={{ fontSize: { md: "0.9rem" } }}>
-              Trade
-            </Button>
-            <Button color="inherit" sx={{ fontSize: { md: "0.9rem" } }}>
-              Explore
-            </Button>
+
+            <Link href="/trade" style={{ textDecoration: "none", color: "inherit" }}>
+              <Button color="inherit" sx={{ fontSize: { md: "0.9rem" } }}>
+                Trade
+              </Button>
+            </Link>
+            <Link href="/explore" style={{ textDecoration: "none", color: "inherit" }}>
+              <Button color="inherit" sx={{ fontSize: { md: "0.9rem" } }}>
+                Explore
+              </Button>
+            </Link>
           </Box>
         </Box>
 
@@ -232,22 +240,26 @@ export default function Header() {
         <Box sx={{ width: "100%", p: 2, pt: 8 }}>
           {/* Mobile Menu Items */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
-            <Button
-              fullWidth
-              color="inherit"
-              onClick={() => setMobileMenuOpen(false)}
-              sx={{ justifyContent: "flex-start" }}
-            >
-              Trade
-            </Button>
-            <Button
-              fullWidth
-              color="inherit"
-              onClick={() => setMobileMenuOpen(false)}
-              sx={{ justifyContent: "flex-start" }}
-            >
-              Explore
-            </Button>
+            <Link href="/trade" style={{ textDecoration: "none", color: "inherit" }}>
+              <Button
+                fullWidth
+                color="inherit"
+                onClick={() => setMobileMenuOpen(false)}
+                sx={{ justifyContent: "flex-start" }}
+              >
+                Trade
+              </Button>
+            </Link>
+            <Link href="/explore" style={{ textDecoration: "none", color: "inherit" }}>
+              <Button
+                fullWidth
+                color="inherit"
+                onClick={() => setMobileMenuOpen(false)}
+                sx={{ justifyContent: "flex-start" }}
+              >
+                Explore
+              </Button>
+            </Link>
           </Box>
 
           {/* Mobile Search */}
