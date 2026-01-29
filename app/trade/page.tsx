@@ -25,6 +25,7 @@ import { useAccount } from "wagmi";
 import { useQuery } from "@tanstack/react-query";
 import { INFT } from "@/lib/models";
 import NFTDetails from "@/components/NFTDetails";
+import ListNFTDialog from "@/components/ListNFTDialog";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -45,7 +46,6 @@ export default function Trade() {
     const { address, isConnected } = useAccount();
     const [tabValue, setTabValue] = useState(0);
     const [selectedNFT, setSelectedNFT] = useState<INFT | null>(null);
-    const [listingPrice, setListingPrice] = useState("");
     const [listingDialogOpen, setListingDialogOpen] = useState(false);
 
     // Fetch user's NFTs
@@ -95,45 +95,15 @@ export default function Trade() {
 
     const handleListingDialogOpen = (nft: INFT) => {
         setSelectedNFT(nft);
-        setListingPrice("");
         setListingDialogOpen(true);
     };
 
     const handleListingDialogClose = () => {
         setListingDialogOpen(false);
         setSelectedNFT(null);
-        setListingPrice("");
     };
 
-    const handleListNFT = async () => {
-        if (!selectedNFT || !listingPrice) return;
 
-        try {
-            // Update existing NFT record instead of creating a new one
-            const response = await fetch("/api/nfts", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    tokenId: selectedNFT.tokenId,
-                    contractAddress: selectedNFT.contractAddress,
-                    price: parseFloat(listingPrice),
-                    listed: true,
-                }),
-            });
-
-            if (response.ok) {
-                alert("NFT listed successfully!");
-                handleListingDialogClose();
-            } else {
-                const err = await response.json();
-                console.error("List failed:", err);
-                alert("Failed to list NFT: " + (err.error || response.statusText));
-            }
-        } catch (error) {
-            alert("Failed to list NFT");
-            console.error(error);
-        }
-    };
 
     if (!isConnected) {
         return (
@@ -250,40 +220,16 @@ export default function Trade() {
                     )}
                 </Dialog>
 
-                {/* Listing Dialog */}
-                <Dialog open={listingDialogOpen} onClose={handleListingDialogClose} maxWidth="sm" fullWidth>
-                    <DialogTitle>List NFT for Sale</DialogTitle>
-                    <DialogContent>
-                        <Box sx={{ pt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-                            {selectedNFT && (
-                                <>
-                                    <Typography variant="body2">
-                                        <strong>{selectedNFT.name}</strong>
-                                    </Typography>
-                                    <TextField
-                                        fullWidth
-                                        label="Price (ETH)"
-                                        type="number"
-                                        value={listingPrice}
-                                        onChange={(e) => setListingPrice(e.target.value)}
-                                        placeholder="0.00"
-                                        inputProps={{ step: "0.01", min: "0" }}
-                                    />
-                                </>
-                            )}
-                        </Box>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleListingDialogClose}>Cancel</Button>
-                        <Button
-                            onClick={handleListNFT}
-                            variant="contained"
-                            disabled={!listingPrice || parseFloat(listingPrice) <= 0}
-                        >
-                            List
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                <ListNFTDialog
+                    open={listingDialogOpen}
+                    nft={selectedNFT}
+                    onClose={handleListingDialogClose}
+                    onSuccess={() => {
+                        handleListingDialogClose();
+                        // refresh to pick up updated listing (simple approach)
+                        if (typeof window !== "undefined") window.location.reload();
+                    }}
+                />
             </TabPanel>
 
             {/* Marketplace Tab */}
