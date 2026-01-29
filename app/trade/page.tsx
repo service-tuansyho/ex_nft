@@ -109,16 +109,13 @@ export default function Trade() {
         if (!selectedNFT || !listingPrice) return;
 
         try {
+            // Update existing NFT record instead of creating a new one
             const response = await fetch("/api/nfts", {
-                method: "POST",
+                method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     tokenId: selectedNFT.tokenId,
                     contractAddress: selectedNFT.contractAddress,
-                    owner: selectedNFT.owner.toLowerCase(),
-                    name: selectedNFT.name,
-                    description: selectedNFT.description,
-                    image: selectedNFT.image,
                     price: parseFloat(listingPrice),
                     listed: true,
                 }),
@@ -127,6 +124,10 @@ export default function Trade() {
             if (response.ok) {
                 alert("NFT listed successfully!");
                 handleListingDialogClose();
+            } else {
+                const err = await response.json();
+                console.error("List failed:", err);
+                alert("Failed to list NFT: " + (err.error || response.statusText));
             }
         } catch (error) {
             alert("Failed to list NFT");
@@ -185,7 +186,7 @@ export default function Trade() {
                                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                                             {nft.description}
                                         </Typography>
-                                        {nft.price && (
+                                        {nft.listed && (
                                             <Typography variant="body2" color="primary" sx={{ fontWeight: "bold" }}>
                                                 Price: {nft.price} ETH
                                             </Typography>

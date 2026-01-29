@@ -74,3 +74,43 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { tokenId, contractAddress, price, listed } = await request.json();
+
+    if (!tokenId || !contractAddress) {
+      return NextResponse.json(
+        { success: false, error: "tokenId and contractAddress are required" },
+        { status: 400 }
+      );
+    }
+
+    await dbConnect();
+
+    const update: any = {};
+    if (typeof price !== "undefined") update.price = price;
+    if (typeof listed !== "undefined") update.listed = listed;
+
+    const nft = await NFT.findOneAndUpdate(
+      { tokenId: tokenId.toString(), contractAddress },
+      { $set: update },
+      { new: true }
+    );
+
+    if (!nft) {
+      return NextResponse.json(
+        { success: false, error: "NFT not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, data: nft });
+  } catch (error) {
+    console.error("Error updating NFT:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to update NFT" },
+      { status: 500 }
+    );
+  }
+}
