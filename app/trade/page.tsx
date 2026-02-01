@@ -22,7 +22,7 @@ import {
     TextField,
 } from "@mui/material";
 import { useAccount } from "wagmi";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { INFT } from "@/lib/models";
 import NFTDetails from "@/components/NFTDetails";
 import ListNFTDialog from "@/components/ListNFTDialog";
@@ -44,6 +44,7 @@ function TabPanel(props: TabPanelProps) {
 
 export default function Trade() {
     const { address, isConnected } = useAccount();
+    const queryClient = useQueryClient();
     const [tabValue, setTabValue] = useState(0);
     const [selectedNFT, setSelectedNFT] = useState<INFT | null>(null);
     const [listingDialogOpen, setListingDialogOpen] = useState(false);
@@ -226,8 +227,9 @@ export default function Trade() {
                     onClose={handleListingDialogClose}
                     onSuccess={() => {
                         handleListingDialogClose();
-                        // refresh to pick up updated listing (simple approach)
-                        if (typeof window !== "undefined") window.location.reload();
+                        // Invalidate queries so data refreshes without a full page reload
+                        if (address) queryClient.invalidateQueries({ queryKey: ["user-nfts", address] });
+                        queryClient.invalidateQueries({ queryKey: ["market-nfts"] });
                     }}
                 />
             </TabPanel>
